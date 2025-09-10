@@ -6,41 +6,43 @@
 #include "../common/namespace.h"
 #include <inttypes.h>
 
-#if defined  P2047m1l226
-#define primes_num 226
-#define two_cofactor 64
-#define primes_batches 15
-#define WOMBATKEYS 67
-#define NUMBER_OF_WORDS 32
-#define UPPER_BOUND 1044  // Bits of 4 * sqrt( [p + 1] / [2^e] )
-#define ELLIGATOR_SEED 2
+// #if defined  P2047m1l226
+// #define primes_num 226
+// #define two_cofactor 64
+// #define primes_batches 15
+// #define WOMBATKEYS 67
+// #define NUMBER_OF_WORDS 32
+// #define UPPER_BOUND 1044  // Bits of 4 * sqrt( [p + 1] / [2^e] )
+// #define ELLIGATOR_SEED 2
 
-#elif defined  P2047m4l205
+#if defined  P2047m4l205
+// dummy free: skip 3
 #define primes_num 207
-#define two_cofactor 287
-#define primes_batches 13
-#define WOMBATKEYS 68
+#define two_cofactor 275
+#define primes_batches 17
+#define WOMBATKEYS 73
 #define NUMBER_OF_WORDS 32
 #define UPPER_BOUND 1044  // Bits of 4 * sqrt( [p + 1] / [2^e] )
 #define ELLIGATOR_SEED 15
 
 #elif defined  P2047m6l194
+// dummy free: skip 3
 #define primes_num 196
 #define two_cofactor 391
-#define primes_batches 12
-#define WOMBATKEYS 69
+#define primes_batches 14
+#define WOMBATKEYS 73
 #define NUMBER_OF_WORDS 32
 #define UPPER_BOUND 1044  // Bits of 4 * sqrt( [p + 1] / [2^e] )
 #define ELLIGATOR_SEED 4
 
-#elif defined  P2047m7l188
-#define primes_num 190
-#define two_cofactor 450
-#define primes_batches 10
-#define WOMBATKEYS 70
-#define NUMBER_OF_WORDS 32
-#define UPPER_BOUND 1044  // Bits of 4 * sqrt( [p + 1] / [2^e] )
-#define ELLIGATOR_SEED 7
+// #elif defined  P2047m7l188
+// #define primes_num 190
+// #define two_cofactor 450
+// #define primes_batches 10
+// #define WOMBATKEYS 70
+// #define NUMBER_OF_WORDS 32
+// #define UPPER_BOUND 1044  // Bits of 4 * sqrt( [p + 1] / [2^e] )
+// #define ELLIGATOR_SEED 7
 #else
 
 #error BITS must be 2048
@@ -59,6 +61,7 @@
 
 extern const int64_t primes[primes_num];
 extern const int64_t primes_dac[primes_num];
+extern const int64_t primes_dacshund[primes_num];
 extern const int64_t primes_daclen[primes_num];
 extern const int64_t batch_start[primes_batches];
 extern const int64_t batch_stop[primes_batches];

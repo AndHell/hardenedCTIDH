@@ -27,16 +27,6 @@
 
 const public_key base = {.A = {0}, .seed = ELLIGATOR_SEED}; /* A = 0 */
 
-// static void fp_print(fp A)
-// {pi
-// 	uint8_t i;
-//   printf("{");
-// 	for(i = 0; i < NUMBER_OF_WORDS; i++)
-// 		printf("0x%016lX,", A[i]);
-// 	printf("}\n");
-// }
-
-
 static void cmov(int64_t *r, const int64_t *a, int64_t b)
 {
 	uint64_t t;
@@ -71,8 +61,12 @@ static void multiples(proj Q[], proj const P, proj const A)
 {
   int j;
 
+
+  int64_t primes_needed = batch_stop[primes_batches - 1] + 1;
+
+
   proj_copy(&Q[0], &P);
-  for (j = 0; j < (int)primes_num; j++)
+  for (j = 0; j < (int)primes_needed; j++)
   {
     if (primes[j] == 3 || primes[j] == 5 || primes[j] == 7)
       continue;
@@ -80,7 +74,7 @@ static void multiples(proj Q[], proj const P, proj const A)
     xMUL_dac(&Q[0], &A, 1, &Q[0], primes_dac[j], primes_daclen[j], primes_daclen[j]);
   }
 
-  //  --- multiplying by 3
+  // //  --- multiplying by 3
   xMUL_dac(&Q[1], &A, 1, &Q[0], 0, 0, 0);
   xMUL_dac(&Q[1], &A, 1, &Q[1], 0, 0, 0);
   //  --- multiplying by 5
@@ -100,6 +94,7 @@ static void multiples(proj Q[], proj const P, proj const A)
 void fulltorsion_points(fp u, fp const a)
 {
     proj Tp, Tm, Pp[primes_num], Aux_Tp[3], Pm[primes_num], Aux_Tm[3], A;
+    //proj Tp, Tm, Pp[primes_num], Pm[primes_num], A;
     int j;
 
     // Convert curve to projective Montgomery form (A' + 2C : 4C)
@@ -116,8 +111,6 @@ void fulltorsion_points(fp u, fp const a)
     {
 
 #ifdef ENABLE_CT_TESTING
-        VALGRIND_MAKE_MEM_DEFINED(Aux_Tp, sizeof(proj) * 3);
-        VALGRIND_MAKE_MEM_DEFINED(Aux_Tm, sizeof(proj) * 3);
         VALGRIND_MAKE_MEM_DEFINED(&A, sizeof(proj));
         VALGRIND_MAKE_MEM_DEFINED(&boolp, sizeof(uint8_t));
         VALGRIND_MAKE_MEM_DEFINED(&boolm, sizeof(uint8_t));
@@ -132,48 +125,48 @@ void fulltorsion_points(fp u, fp const a)
         clearpublicprimes(&Tp, &A);
         clearpublicprimes(&Tm, &A);
 
+        int64_t primes_needed = batch_stop[primes_batches - 1] + 1;
+
+        // clear ells not used in the keyspace
+        for (j = primes_needed; j < primes_num; j++)
+        {
+            xMUL_dac(&Tp, &A, 0, &Tp, primes_dac[j], primes_daclen[j], primes_daclen[j]);
+            xMUL_dac(&Tm, &A, 0, &Tm, primes_dac[j], primes_daclen[j], primes_daclen[j]);
+        }
+
 #ifdef ENABLE_CT_TESTING
         memset(Aux_Tp, 0, sizeof(proj) * 3);
 #endif
         multiples(Aux_Tp, Tp, A);
-        if (fp_iszero(Aux_Tp[0].z) | fp_iszero(Aux_Tp[1].z) | fp_iszero(Aux_Tp[2].z))
+        if (fp_iszero(Aux_Tp[1].z) | fp_iszero(Aux_Tp[2].z))
             continue;
 
 #ifdef ENABLE_CT_TESTING
         memset(Aux_Tm, 0, sizeof(proj) * 3);
 #endif
         multiples(Aux_Tm, Tm, A);
-        if (fp_iszero(Aux_Tm[0].z) | fp_iszero(Aux_Tm[1].z) | fp_iszero(Aux_Tm[2].z))
+        if (fp_iszero(Aux_Tm[1].z) | fp_iszero(Aux_Tm[2].z))
             continue;
 
         // Checking if Tp is an order (p+1)/(2^e)
         proj_copy(&Pp[0], &Tp);
-        cofactor_multiples(Pp, A, 0, primes_num);
+        cofactor_multiples(Pp, A, 0, primes_needed);
         boolp = 1;
-        boolp &= (1 - fp_iszero(Pp[0].z)) | (1 - fp_iszero(Aux_Tp[0].z));
-        boolp &= (1 - fp_iszero(Pp[1].z)) | (1 - fp_iszero(Aux_Tp[1].z));
-        boolp &= (1 - fp_iszero(Pp[2].z)) | (1 - fp_iszero(Aux_Tp[2].z));
-        for (j = 3; j < (int)primes_num; j++)
+        for (j = batch_start[0]+2; j < primes_needed; j++)
             boolp &= (1 - fp_iszero(Pp[j].z));
 
         if (1 - boolp)
             continue;
 
-        // ---> This can be removed for wd1 style
-        // Checking if Tm is an order (p+1)/(2^e)
         proj_copy(&Pm[0], &Tm);
-        cofactor_multiples(Pm, A, 0, primes_num);
+        cofactor_multiples(Pm, A, 0, primes_needed);
 
         boolm = 1;
-        boolm &= (1 - fp_iszero(Pm[0].z)) | (1 - fp_iszero(Aux_Tm[0].z));
-        boolm &= (1 - fp_iszero(Pm[1].z)) | (1 - fp_iszero(Aux_Tm[1].z));
-        boolm &= (1 - fp_iszero(Pm[2].z)) | (1 - fp_iszero(Aux_Tm[2].z));
-        for (j = 3; j < (int)primes_num; j++)
+        for (j = batch_start[0]+2; j < primes_needed; j++)
             boolm &= (1 - fp_iszero(Pm[j].z));
 
         if (1 - boolm)
             continue;
-        // <---
     } while ((1 - boolp) | (1 - boolm));
 
     fp_dec(u, (uint64_t *const)u);
@@ -181,8 +174,7 @@ void fulltorsion_points(fp u, fp const a)
 
 /* goal: constant time */
 void action(public_key *out, public_key const *in, private_key const *priv)
-{  
-
+{
   init_counters();
 
   proj A;
@@ -246,13 +238,12 @@ void action(public_key *out, public_key const *in, private_key const *priv)
     if (t > batch_stop[tmp_b])
       tmp_b++;
 
-    int64_t dac = lookup(t, primes_dac);
-    int64_t daclen = lookup(t, primes_daclen);
+    int64_t dac = lookup(t, primes_dacshund);
+    int64_t daclen = batch_maxdac[tmp_b];
 
-    xMUL_dac(&Points[0], &A24, 0, &Points[0], dac, daclen, batch_maxdac[tmp_b]);
-    xMUL_dac(&Points[1], &A24, 0, &Points[1], dac, daclen, batch_maxdac[tmp_b]);
+    xMUL_dac(&Points[0], &A24, 0, &Points[0], dac, daclen, daclen);
+    xMUL_dac(&Points[1], &A24, 0, &Points[1], dac, daclen, daclen);
   }
-
 
   proj ramifications[2 * WOMBATKEYS] = {0};
   int inner,
@@ -273,10 +264,7 @@ void action(public_key *out, public_key const *in, private_key const *priv)
   int16_t current_batch = 0; //primes_batches - 1;
   int16_t current_batch_inner = batch_numkeys[current_batch];
 
-  proj Points_[2 * WOMBATKEYS] = {0};
-
   // #pragma unroll WOMBATKEYS
-  //int64_t tmp_cost = fpmul+fpsqr;
   for (int i = WOMBATKEYS - 1; i >= 0; i--)
   {
     if ((WOMBATKEYS - i - 1) > batch_keybounds_stop[current_batch])
@@ -289,7 +277,7 @@ void action(public_key *out, public_key const *in, private_key const *priv)
     uint16_t flip_index = WOMBATKEYS - i -1;
     uint16_t current_ell_index = priv->ells[flip_index];
     uint64_t current_ell = lookup(current_ell_index, primes);
-    // 0 -> dummy, 1 -> + direction, 2 -> - direction
+  
     int64_t direction = priv->directions[flip_index];
 
     uint64_t lowerend_ell = primes[batch_start[current_batch] + batch_numkeys[current_batch] - current_batch_inner];
@@ -297,8 +285,13 @@ void action(public_key *out, public_key const *in, private_key const *priv)
 
 
     // conditional swap based on direction
+    // 0 := dummy,  1:= + , 2 := -
     swap = -int64mask_equal(direction, (int64_t)2);
-    proj_cswap(&ramifications[0+ 2 * block], &ramifications[1+ 2 * block], swap);
+
+    for(int64_t b = 0; b <= block; ++b)
+    {
+      proj_cswap(&ramifications[0+ 2 * b], &ramifications[1+ 2 * b], swap);
+    }
 
     tmp_b = primes_batches-1;
     while (moves < i)
@@ -315,16 +308,16 @@ void action(public_key *out, public_key const *in, private_key const *priv)
         while (pos < batch_keybounds_start[tmp_b])
           tmp_b--;
 
-        int64_t dac = lookup(priv->ells[pos], primes_dac);
-        int64_t daclen = lookup(priv->ells[pos], primes_daclen);
+        int64_t dac = lookup(priv->ells[pos], primes_dacshund);
+        int64_t daclen = batch_maxdac[tmp_b];
 
         if(moves + strategy[k] < i)
         {
-          xMUL_dac(&ramifications[0 + 2 * block], &A24, 0, &ramifications[0 + 2 * block], dac, daclen, batch_maxdac[tmp_b]);
-          xMUL_dac(&ramifications[1 + 2 * block], &A24, 0, &ramifications[1 + 2 * block], dac, daclen, batch_maxdac[tmp_b]);
+          xMUL_dac(&ramifications[0 + 2 * block], &A24, 0, &ramifications[0 + 2 * block], dac, daclen, daclen);
+          xMUL_dac(&ramifications[1 + 2 * block], &A24, 0, &ramifications[1 + 2 * block], dac, daclen, daclen);
         }
         else { // current block
-          xMUL_dac(&ramifications[0 + 2 * block], &A24, 0, &ramifications[0 + 2 * block], dac, daclen, batch_maxdac[tmp_b]);
+          xMUL_dac(&ramifications[0 + 2 * block], &A24, 0, &ramifications[0 + 2 * block], dac, daclen, daclen);
         }
       }
 
@@ -336,47 +329,39 @@ void action(public_key *out, public_key const *in, private_key const *priv)
     // how many points should be evaluated?
     Plen = 2 * block;
 
- 
     proj Anew;
     proj_copy(&Anew, &A);
-    for (int j = 0; j < Plen; j++)
-    {
-      // backup for the dummy case
-      proj_copy(&Points_[j], &ramifications[j]);
-    }
-
-    xISOG_matryoshka(&Anew, Points_, Plen, &ramifications[0 + 2 * block], current_ell, lowerend_ell, upperend_ell);
-
+    xISOG_matryoshka(&Anew, ramifications, Plen, &ramifications[0 + 2 * block], current_ell, lowerend_ell, upperend_ell);
 
     // copy back
-    proj_cmov(&A, &Anew, -int64mask_nonzero(direction));
+    proj_cmov(&A, &Anew, 1);
     xA24(&A24, &A);
 
-
-    for (int j = 0; j < Plen; j++)
+    // we still need to "reduce" the points on the twist
+    // which is every other point on our list.
+    int64_t dac = lookup(current_ell_index, primes_dacshund);
+    int64_t daclen = batch_maxdac[current_batch];
+    for (int b = 0; b < block; b++)
     {
-      proj_cmov(&ramifications[j], &Points_[j], -int64mask_nonzero(direction));
-
-      // in case of dummy, we still need to "remove" degree
-      
-      int64_t dac = lookup(current_ell_index, primes_dac);
-      int64_t daclen = lookup(current_ell_index, primes_daclen);
-
-      xMUL_dac(&ramifications[j], &A24, 0, &ramifications[j], dac, daclen, batch_maxdac[current_batch]);
+      xMUL_dac(&ramifications[1+2*b], &A24, 0, &ramifications[1+2*b], dac, daclen, daclen);
     }
-
 
     // Configuring for the next iteration
     moves -= xmul_counter[block];
     xmul_counter[block] = 0;
     block -= 1;
+
     // swap back based on direction
-    proj_cswap(&ramifications[0+ 2 * block], &ramifications[1+ 2 * block], swap);
+    for(int64_t b = 0; b <= block; ++b)
+    {
+      proj_cswap(&ramifications[0+ 2 * b], &ramifications[1+ 2 * b], swap);
+    }
 
     current_batch_inner--;
   }
 
-   //printf("cost action: %ld | overhead: %ld\n", fpmul+fpsqr - tmp_cost, tmp_cost);
+  // // print cost:
+  // printf("cost action plain: \033[1;34m%ld\033[0m\n", (fpmul + fpsqr));
 
   fp_inv(A.z);
   fp_mul2(&A.x, (const fp *)&A.z);

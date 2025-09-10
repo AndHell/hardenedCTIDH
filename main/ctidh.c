@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
     // Alice
     printf("\n\033[0;35m// Alice\033[0m\n");
     // uint8_t a[sizeof(private_key)] = {0}, A[sizeof(public_key)] = {0}, ss_a[sizeof(public_key)];
-    uint8_t a[SK_SIZE] = {0}, A[PK_SIZE] = {0}, ss_a[SS_SIZE];
+    uint8_t a[SK_SIZE] = {0}, A[PK_SIZE] = {0}, ss_a[SS_SIZE] = {0};
     cc0 = getticks();
     keygen(A, a);
     cc1 = getticks();
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
     // ----------
     // Bob
     printf("\n\033[0;34m// Bob\033[0m\n");
-    uint8_t b[SK_SIZE], B[PK_SIZE], ss_b[SS_SIZE];
+    uint8_t b[SK_SIZE] = {0}, B[PK_SIZE] = {0}, ss_b[SS_SIZE] = {0};
     cc0 = getticks();
     keygen(B, b);
     cc1 = getticks();
@@ -190,12 +190,12 @@ static int run_benchmark_action(int64_t target, int64_t KEYS)
 
         for (long long key = 0; key < KEYS; ++key)
         {
-            // fpmul = fpsqr = fpadd = 0;
-            // cycles = getticks();
-            // bool ok = validate(&B);
-            // cycles = getticks() - cycles;
-            // printf("%lld %lld validate \t\t mulsq %7ld sq %7ld addsub %7ld cycles %12lld\n", loop, key, fpmul, fpsqr, fpadd, cycles);
-            // assert(ok);
+            fpmul = fpsqr = fpadd = 0;
+            cycles = getticks();
+            bool ok = validate(&B);
+            cycles = getticks() - cycles;
+            printf("%lld %lld validate \t\t mulsq %7ld sq %7ld addsub %7ld cycles %12lld\n", loop, key, fpmul, fpsqr, fpadd, cycles);
+            assert(ok);
 
             fpmul = fpsqr = fpadd = 0;
             cycles = getticks();
@@ -203,12 +203,16 @@ static int run_benchmark_action(int64_t target, int64_t KEYS)
             cycles = getticks() - cycles;
             printf("%lld %lld action \t\t mulsq %7ld sq %7ld addsub %7ld cycles %12lld\n", loop, key, fpmul, fpsqr, fpadd, cycles);
 
-            // fpmul = fpsqr = fpadd = 0;
-            // cycles = getticks();
-            // fulltorsion_points(u, result.A);
-            // cycles = getticks() - cycles;
-            // result.seed = u[0];
-            // printf("%lld %lld torsionpoint \t mulsq %7ld sq %7ld addsub %7ld cycles %12lld\n", loop, key, fpmul, fpsqr, fpadd, cycles);
+            if(key == 0)
+            {            
+                fpmul = fpsqr = fpadd = 0;
+                cycles = getticks();
+                fulltorsion_points(u, result.A);
+                cycles = getticks() - cycles;
+                result.seed = u[0];
+                printf("%lld %lld torsionpoint \t mulsq %7ld sq %7ld addsub %7ld cycles %12lld\n", loop, key, fpmul, fpsqr, fpadd, cycles);
+            }
+
 
             fflush(stdout);
             //assert(validate(&result));

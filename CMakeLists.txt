@@ -28,6 +28,8 @@ option(SECSIDH_CTIDH_TUNE_CYCLES "Use version tuned for clock cycles " OFF)
 
 option(ENABLE_CT_TESTING  "Enable compilation for constant time testing." OFF)
 
+# option(SECSIDH_USE_DUMMY "Use dummy isogenies" OFF)
+
 # convenience macro define all parameter sets
 macro(SECSIDH_DEFINE_PARAMETERS bits default)
     option(SECSIDH_ENABLE_CTIDH${bits} "Enable CTIDH${bits} parameterset." ${default})
@@ -35,17 +37,20 @@ macro(SECSIDH_DEFINE_PARAMETERS bits default)
         set(SECSIDH_PARAMETER_SETS_CTIDH ${SECSIDH_PARAMETER_SETS_CTIDH} ${bits})
     endif()
 endmacro()
-SECSIDH_DEFINE_PARAMETERS(2047m1l226 ON)
+SECSIDH_DEFINE_PARAMETERS(2047m1l226 OFF)
 SECSIDH_DEFINE_PARAMETERS(2047m4l205 ON)
 SECSIDH_DEFINE_PARAMETERS(2047m6l194 ON)
 SECSIDH_DEFINE_PARAMETERS(2047m7l188 OFF)
-
 
 
 # handle counter setting
 if(SECSIDH_GLOBAL_COUNTERS)
     add_definitions(-DGLOBAL_COUNTERS=1)
 endif()
+
+# if(SECSIDH_USE_DUMMY)
+#     add_definitions(-DUSE_DUMMY)
+# endif()
 
 # Set project code options
 # set(CMAKE_C_STANDARD 11)

@@ -187,7 +187,7 @@ void secsidh_oct2sk(private_key *sk, const uint8_t *buf)
 int secsidh_keygen(uint8_t *pk, uint8_t *sk)
 {
     public_key ipk[2] = {0};
-    private_key isk;
+    private_key isk = {0};
     internal_keygen(ipk, &isk);
 
 

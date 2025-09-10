@@ -1,8 +1,0 @@
-#define action NAMESPACEBITS(action)
-#define base NAMESPACEBITS(base)
-#define csidh NAMESPACEBITS(csidh)
-#define csidh_private NAMESPACEBITS(csidh_private)
-#define csidh_statsucceeded NAMESPACEBITS(csidh_statsucceeded)
-#define csidh_stattried NAMESPACEBITS(csidh_stattried)
-#define validate NAMESPACEBITS(validate)
-#define validate_cutofforder_v2 NAMESPACEBITS(validate_cutofforder_v2)

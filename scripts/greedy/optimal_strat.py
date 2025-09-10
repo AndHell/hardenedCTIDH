@@ -2,8 +2,8 @@
 
 import sys
 import numpy as np
-import matplotlib.pyplot as plt
-import networkx as nx
+# import matplotlib.pyplot as plt
+# import networkx as nx
 from math import floor
 
 from memoized import memoized
@@ -127,7 +127,7 @@ def dynamic_programming_algorithm(L, C_dac, C_isog, C_eval):
                     C[len(Tuple[b:])][Tuple[b:]] +       # Subtriangle on the left side with (i - b) leaves
                     2.0*sum([ C_xMUL[L.index(t)] for t in Tuple[:b] ])   +   # Weights corresponding with vertical edges required for connecting the vertex (0,0) with the subtriangle with b leaves
                     2.0*sum([ C_xEVAL[L.index(t)] for t in Tuple[b:] ])  +   # Weights corresponding with horizontal edges required for connecting the vertex (0,0) with the subtriangle with (i - b) leaves
-                    2.0*sum([ C_xMUL[L.index(t)] for t in Tuple[b:] ])       # Weights corresponding with horizontal edges required for connecting the vertex (0,0) with the subtriangle with (i - b) leaves
+                    1.0*sum([ C_xMUL[L.index(t)] for t in Tuple[b:] ])       # Weights corresponding with horizontal edges required for connecting the vertex (0,0) with the subtriangle with (i - b) leaves
                   # ^  2 = 1 (point on twist) + 1 (to account for dummies)
                     ) for b in range(1, i - 1) 
                     ] +\
@@ -136,7 +136,7 @@ def dynamic_programming_algorithm(L, C_dac, C_isog, C_eval):
                     C[1][Tuple[(i - 1):]]     +       # Subtriangle on the left side with 1 leaf (only one vertex)
                     1.0*sum([ C_xMUL[L.index(t)] for t in Tuple[:(i - 1)] ]) + # Weights corresponding with vertical edges required for connecting the vertex (0,0) with the subtriangle with 1 leaf
                     2.0*C_xEVAL[L.index(Tuple[i - 1])] +                      # Weights corresponding with horizontal edges required for connecting the vertex (0,0) with the subtriangle with (i - 1) leaves
-                    2.0*C_xMUL[L.index(Tuple[i - 1])]                    # Weights corresponding with horizontal edges required for connecting the vertex (0,0) with the subtriangle with (i - 1) leaves
+                    1.0*C_xMUL[L.index(Tuple[i - 1])]                    # Weights corresponding with horizontal edges required for connecting the vertex (0,0) with the subtriangle with (i - 1) leaves
                   # ^  2 = 1 (point on twist) + 1 (to account for dummies)
                     )
                     ]
@@ -213,49 +213,50 @@ def strategy_evaluation(strategy, n):
     return vertexes, vertex_colors, edges, edge_colors
     
 def plot_strat(S):
-    n = len(S) + 1
+    pass
+    # n = len(S) + 1
 
-    # Strategy written as a graph
-    vertexes, vertex_colors, edges, edge_colors = strategy_evaluation(S, n)
+    # # Strategy written as a graph
+    # vertexes, vertex_colors, edges, edge_colors = strategy_evaluation(S, n)
 
-    # Simba method written as a graph
-    # vertexes, vertex_colors, edges, edge_colors = simba(n, 3)
+    # # Simba method written as a graph
+    # # vertexes, vertex_colors, edges, edge_colors = simba(n, 3)
 
-    # All the Discrete Right Triangle
-    # vertexes, vertex_colors, edges, edge_colors = DRT(n)
-    G = nx.Graph()
+    # # All the Discrete Right Triangle
+    # # vertexes, vertex_colors, edges, edge_colors = DRT(n)
+    # G = nx.Graph()
 
-    # Adding nodes in specific positions
-    G.add_nodes_from(list(range(len(vertexes))))
+    # # Adding nodes in specific positions
+    # G.add_nodes_from(list(range(len(vertexes))))
 
-    nx.set_node_attributes(G, vertexes, 'pos')
-    # Adding edges with specific colors
-    for i in range(len(edges)):
-        G.add_edge(edges[i][0], edges[i][1], color=edge_colors[i])
+    # nx.set_node_attributes(G, vertexes, 'pos')
+    # # Adding edges with specific colors
+    # for i in range(len(edges)):
+    #     G.add_edge(edges[i][0], edges[i][1], color=edge_colors[i])
 
-    # Setting variables for a pretty plot of the graph
-    edges = G.edges()
-    edge_colors = [G[u][v]['color'] for u, v in edges]
-    weights = [6 for u, v in edges]
-    vertex_sizes = [24] * len(vertexes)
+    # # Setting variables for a pretty plot of the graph
+    # edges = G.edges()
+    # edge_colors = [G[u][v]['color'] for u, v in edges]
+    # weights = [6 for u, v in edges]
+    # vertex_sizes = [24] * len(vertexes)
 
-    # Finally, the graph will be plotted
-    plt.figure(1)
-    nx.draw(
-        G,
-        vertexes,
-        node_color=['black'] * len(vertexes),
-        node_size=vertex_sizes,
-        edge_color=edge_colors,
-        width=weights,
-    )
+    # # Finally, the graph will be plotted
+    # # plt.figure(1)
+    # # nx.draw(
+    # #     G,
+    # #     vertexes,
+    # #     node_color=['black'] * len(vertexes),
+    # #     node_size=vertex_sizes,
+    # #     edge_color=edge_colors,
+    # #     width=weights,
+    # # )
 
-    # Saving the graph as a .PNG figure
-    # file_name = 'out.png'
-    # plt.savefig(file_name)
-    # print("saving graph: " + file_name)
-    plt.show()
-    #plt.close()
+    # # # Saving the graph as a .PNG figure
+    # # # file_name = 'out.png'
+    # # # plt.savefig(file_name)
+    # # # print("saving graph: " + file_name)
+    # # plt.show()
+    # # #plt.close()
 
 
 

@@ -4,7 +4,6 @@
 #include "primes.h"
 #include "random.h"
 
-#ifdef CTIDH
 #include "../CTIDH/ctidh.h"
 
 // WOMBat keygen
@@ -21,29 +20,14 @@ void ctidh_private(private_key *priv)
         batch_sumkeys += batch_numkeys[b];
     }
 
-    // todo: uniform sampling needed!
     for (uint32_t b = 0; b < WOMBATKEYS; b++)
     {
         randombytes(&rnd, 1);
-        priv->directions[b] = (rnd % 3);
+
+        // 0 := Dummy (unused as we go dummy free!)
+        // 1 := +
+        // 2 := -
+    
+        priv->directions[b] = (rnd % 2) + 1;
     }
-
 }
-
-#else
-#include "../CSIDH/csidh.h"
-
-void csidh_private(private_key *priv)
-{
-    int i;
-    uint8_t rnd;
-    for (i = 0; i < (int)N; i++)
-    {
-        randombytes(&rnd, 1);
-        rnd = rnd & 0x1;
-        priv->e[i] = rnd - (rnd ^ 0x1);
-    };
-    // memset(priv->e, 1, sizeof(private_key));
-}
-
-#endif

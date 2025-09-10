@@ -16,6 +16,26 @@
 
 // #define fp_cswap fp_cswap1
 
+
+
+
+// static void fp_print(const fp ss, char *c)
+// {
+//     printf("%s = {", c);
+//     int i;
+//     for (i = NUMBER_OF_WORDS - 1; i > -1; i--)
+//     {
+//       printf("%#018lx, ", ss[i]);
+
+//       if(i == 0)
+//         printf("\b};");
+
+//       if(i % 4 == 0)
+//         printf("\n");
+//     }
+// }
+
+
 // precompute A24.x = A.x+2*A.z, A24.z = 4*A.z
 void xA24(proj *A24, const proj *A)
 {
@@ -281,74 +301,6 @@ static void biquad_precompute_curve(fp *Aprecomp, const proj *P, const proj *A)
     fp_sub3(&Aprecomp[4], (const fp *)&Aprecomp[0], (const fp *)&Aprecomp[1]);
 }
 
-// /* biquad and biquad_inv */
-// static void biquad_both(fp *out,fp *outinv,const proj *P,const proj *Q,const proj *A)
-// {
-//   fp PxQx; fp_mul3(&PxQx,&P->x,&Q->x);
-//   fp PxQz; fp_mul3(&PxQz,&P->x,&Q->z);
-//   fp PzQx; fp_mul3(&PzQx,&P->z,&Q->x);
-//   fp PzQz; fp_mul3(&PzQz,&P->z,&Q->z);
-//   fp PPQQ; fp_mul3(&PPQQ,&PxQx,&PzQz);
-//   fp_add2(&PPQQ,&PPQQ);
-//   fp_mul2(&PPQQ,&A->x);
-
-//   fp s,t;
-
-//   fp_add3(&s,&PxQx,&PzQz);
-//   fp_add3(&t,&PzQx,&PxQz);
-//   fp_mul3(&out[1],&s,&t);
-//   fp_mul2(&out[1],&A->z);
-//   fp_add2(&out[1],&PPQQ);
-//   fp_add2(&out[1],&out[1]);
-//   fp_neg1(&out[1]); /* XXX: push through other computations? */
-
-//   fp_sub3(&out[2],&PxQz,&PzQx);
-//   fp_sq1(&out[2]);
-//   fp_mul2(&out[2],&A->z);
-
-//   fp_sub3(&out[0],&PxQx,&PzQz);
-//   fp_sq1(&out[0]);
-//   fp_mul2(&out[0],&A->z);
-
-//   /* ----- */
-
-//   fp_add3(&s,&PxQz,&PzQx);
-//   fp_add3(&t,&PzQz,&PxQx);
-//   fp_mul3(&outinv[1],&s,&t);
-//   fp_mul2(&outinv[1],&A->z);
-//   fp_add2(&outinv[1],&PPQQ);
-//   fp_add2(&outinv[1],&outinv[1]);
-//   fp_neg1(&outinv[1]); /* XXX: push through other computations? */
-
-//   fp_copy(outinv[2], out[0]);
-//   fp_copy(outinv[0], out[2]);
-// }
-
-// /* biquad_1 and biquad_minus1 */
-// static void biquad_pm1(fp *outplus,fp *outminus,const proj *P,const proj *A)
-// {
-//   fp Pplus; fp_add3(&Pplus,&P->x,&P->z);
-//   fp Pminus; fp_sub3(&Pminus,&P->x,&P->z);
-//   fp_sq1(&Pplus);
-//   fp_sq1(&Pminus);
-
-//   fp_mul3(&outplus[0],&Pminus,&A->z);
-//   fp_copy(outplus[2], outplus[0]);
-//   fp_mul3(&outminus[0],&Pplus,&A->z);
-//   fp_copy(outminus[2], outminus[0]);
-
-//   fp u;
-//   fp_sub3(&u,&Pminus,&Pplus);
-//   fp_mul2(&u,&A->x);
-
-//   fp t;
-//   fp_add3(&t,&outminus[0],&outminus[0]);
-//   fp_sub3(&outplus[1],&u,&t);
-
-//   fp_add3(&t,&outplus[0],&outplus[0]);
-//   fp_sub3(&outminus[1],&t,&u);
-// }
-
 static void biquad_postcompute_curve(fp *outplus, fp *outminus, const fp *Aprecomp)
 {
     fp_copy(outplus[0], Aprecomp[5]);
@@ -379,24 +331,7 @@ static void biquad_postcompute_point(fp *out, const fp *precomp, const fp *Aprec
     fp_add2(&out[0], (const fp *)&out[2]);
 }
 
-// // replace x with x^k
-// static void exp_by_squaring_(fp* x, uint64_t k)
-// {
-//         fp result1;
-//         fp_copy(result1, fp_1);
 
-//     while (k)
-//     {
-//         if (k & 1){
-//           fp_mul2(&result1, x);
-//         }
-//         fp_sq1(x);
-//         k >>= 1;
-//     }
-
-//     fp_cswap_ctidh(&result1, x, 1);
-
-// }
 
 //simultaneous square-and-multiply, computes x^exp and y^exp
 static void exp_by_squaring_(fp *x, fp *y, uint64_t exp)
@@ -436,7 +371,7 @@ void xISOG_matryoshka(proj *A, proj *P, int64_t Plen, proj const *K, int64_t k, 
     int64_t bs = 0;
     int64_t gs = 0;
 
-    steps(&bs, &gs, klower);
+    steps(&bs, &gs, klower); // todo: only up to klower - t
     if (bs)
     {
         sqrtvelu = 1;
@@ -477,19 +412,35 @@ void xISOG_matryoshka(proj *A, proj *P, int64_t Plen, proj const *K, int64_t k, 
 #endif
     M[1] = *K;
     xDBL(&M[2], K, &A24, 0);
+
+
 #ifndef NDEBUG
     Minit[2] = 1;
 #endif
+
+    // UxV + W
+
+    int64_t bl = (klower - 1) / 2;
+    int64_t br = (kupper - 1) / 2;
+    int64_t bk = (k - 1) / 2;
+    int64_t t  = br - bl;
+
 
     if (sqrtvelu)
     {
         for (int64_t s = 3; s < kupper; ++s)
         {
-            if (s & 1)
+            // computes [i]K for i < bs
+            if (s & 1)      // is s odd?
             {
                 int64_t i = s / 2;
                 assert(s == 2 * i + 1);
-                if (i < bs)
+
+                int64_t bound = bs;
+                if ((br - 2 * bs * gs)/2 >= bs) 
+                    bound = (br - 2 * bs * gs)/2;
+
+                if (i <= bound)
                 {
                     if (s == 3)
                     {
@@ -497,13 +448,14 @@ void xISOG_matryoshka(proj *A, proj *P, int64_t Plen, proj const *K, int64_t k, 
                         assert(Minit[2]);
                         xADD(&M[s], &M[2], &M[1], &M[1]);
 #ifndef NDEBUG
-                        Minit[s] = 1;
+                        Minit[s] = 1;   // [3]K
 #endif
                         continue;
                     }
                     assert(Minit[s - 2]);
                     assert(Minit[s - 4]);
                     assert(Minit[2]);
+                    // two consecutive odd numbers are seperated by 2
                     xADD(&M[s], &M[s - 2], &M[2], &M[s - 4]);
 #ifndef NDEBUG
                     Minit[s] = 1;
@@ -512,23 +464,26 @@ void xISOG_matryoshka(proj *A, proj *P, int64_t Plen, proj const *K, int64_t k, 
                 }
             }
             else
-            {
+            {           // s is even
                 int64_t i = s / 2 - 1;
                 assert(s == 2 * i + 2);
-                if (i < (kupper - 1) / 2 - 2 * bs * gs)
+                // this the addition Part W
+                if (i < br - 2 * bs * gs)
                 {
                     if (s == 4)
                     {
                         assert(Minit[2]);
                         xDBL(&M[s], &M[2], &A24, 0);
 #ifndef NDEBUG
-                        Minit[s] = 1;
+                        Minit[s] = 1; // [4]K
 #endif
                         continue;
                     }
                     assert(Minit[s - 2]);
                     assert(Minit[s - 4]);
                     assert(Minit[2]);
+
+                    // two consecutive even numbers are seperated by 2
                     xADD(&M[s], &M[s - 2], &M[2], &M[s - 4]);
 #ifndef NDEBUG
                     Minit[s] = 1;
@@ -536,6 +491,7 @@ void xISOG_matryoshka(proj *A, proj *P, int64_t Plen, proj const *K, int64_t k, 
                     continue;
                 }
             }
+
 
             if (bs > 0)
             {
@@ -602,6 +558,7 @@ void xISOG_matryoshka(proj *A, proj *P, int64_t Plen, proj const *K, int64_t k, 
     proj Abatch;
     fp_copy(Abatch.x, fp_1);
     fp_copy(Abatch.z, fp_1);
+    
     int64_t fixPlen = 0;
     if(Plen>0) {
         fixPlen = Plen;
@@ -614,6 +571,8 @@ void xISOG_matryoshka(proj *A, proj *P, int64_t Plen, proj const *K, int64_t k, 
         fp_copy(Qbatch[h].x, fp_1);
         fp_copy(Qbatch[h].z, fp_1);
     }
+
+
     fp Psum[fixPlen], Pdif[fixPlen];
     for (int64_t h = 0; h < Plen; ++h)
     {
@@ -692,74 +651,178 @@ void xISOG_matryoshka(proj *A, proj *P, int64_t Plen, proj const *K, int64_t k, 
                 fp_mul2(&Qbatch[h].x, (const fp *)&v[i]);
         }
 
-        int64_t ignore = (k - 1) / 2 - 2 * bs * gs; /* skip i >= ignore */
-        for (int64_t i = 0; i < (kupper - 1) / 2 - 2 * bs * gs; ++i)
+
+    
+
+        // finish step 1
+        int64_t ignore = bk - 2 * bs * gs; /* skip i >= ignore */
+        int32_t skip_check = bl - 2 * bs * gs;
+        for (int64_t i = 0; i < br - 2 * bs * gs; ++i)
         {
             int64_t want = -((i - ignore) >> 61); /* 61 to reduce risk of compiler doing something silly */
-            assert(Minit[2 * i + 2]);
-            fp_sub3(&tmp4, (const fp *)&M[2 * i + 2].x, (const fp *)&M[2 * i + 2].z);
-            fp_add3(&tmp3, (const fp *)&M[2 * i + 2].x, (const fp *)&M[2 * i + 2].z);
-            fp_mul3(&tmp2, (const fp *)&Abatch.x, (const fp *)&tmp4);
-            fp_cmov_ctidh(&Abatch.x, (const fp *)&tmp2, want);
-            fp_mul3(&tmp2, (const fp *)&Abatch.z, (const fp *)&tmp3);
-            fp_cmov_ctidh(&Abatch.z, (const fp *)&tmp2, want);
+            want = -int64mask_zero(want);
+
+            int64_t ii = 2 * i + 2;
+
+            assert(Minit[ii]);
+
+            if (i >= skip_check)
+            {
+                int64_t i_check = i + 1;
+                assert(Minit[i_check]);
+
+                proj Mcheck;
+                xDBL(&Mcheck, &M[i_check], &A24, 0);
+                int64_t check = proj_equal(&Mcheck, &M[ii]);
+
+                want *= check;
+            }
+           
+
+            fp mx, mz;
+            fp_copy(mx, M[ii].x);                                    // mx = Xi
+            fp_add3(&mz, (const fp *)&M[ii].z, (const fp *)&M[ii].z); // mz = 2*Zi
+
+            fp_copy(tmp0, mx);                                      //  mx = (alpha * mx) for alpha =  1
+            fp_neg2(&tmp1, (const fp *)&mx);                        // -mx = (alpha * mx) for alpha = -1
+            // 1 uses -mx | 0 uses mx
+            fp_cmov_ctidh(&tmp0, (const fp *)&tmp1, want);         // (alpha * mx)
+
+            fp_add2(&tmp0, (const fp *)&mx);                        // (alpha * mx) + mx
+            fp_sub3(&tmp1, (const fp *)&tmp0, (const fp *)&mz);     // (alpha * mx) + mx - mz
+            fp_add2(&tmp0, (const fp *)&mz);                        // (alpha * mx) + mx + mz
+            fp_mul2(&Abatch.x, (const fp *)&tmp1);                  // Ax * ((alpha * mx) + mx - mz)
+            fp_mul2(&Abatch.z, (const fp *)&tmp0);                  // Az * ((alpha * mx) + mx + mz)
+
+
+            fp_add3(&tmp2, (const fp *)&M[ii].x, (const fp *)&M[ii].z);
+            fp_sub3(&tmp3, (const fp *)&M[ii].x, (const fp *)&M[ii].z);
             for (int64_t h = 0; h < Plen; ++h)
             {
-                fp_mul3(&tmp1, (const fp *)&tmp4, (const fp *)&Psum[h]);
-                fp_mul3(&tmp0, (const fp *)&tmp3, (const fp *)&Pdif[h]);
-                fp_add3(&tmp2, (const fp *)&tmp0, (const fp *)&tmp1);
-                fp_mul2(&tmp2, (const fp *)&Qbatch[h].x);
-                fp_cmov_ctidh(&Qbatch[h].x, (const fp *)&tmp2, want);
-                fp_sub3(&tmp2, (const fp *)&tmp0, (const fp *)&tmp1);
-                fp_mul2(&tmp2, (const fp *)&Qbatch[h].z);
-                fp_cmov_ctidh(&Qbatch[h].z, (const fp *)&tmp2, want);
+                // point evaluation
+                fp_mul3(&mx, (const fp *)&tmp2, (const fp *)&Pdif[h]);      // mx = Ax (Px + Pz)
+                fp_mul3(&mz, (const fp *)&tmp3, (const fp *)&Psum[h]);      //      Az (Px - Pz)
+                fp_add2(&mz, (const fp *)&mz);                              // mz = 2 * Az (Px - Pz)
+
+                fp_copy(tmp0, mx);                                          // mx
+                fp_neg2(&tmp1, (const fp *)&mx);                            // -mx
+                // 1 uses -mx | 0 uses mx
+                fp_cmov_ctidh(&tmp0, (const fp *)&tmp1, want);              // (alpha * mx)
+
+                fp_add2(&tmp0, (const fp *)&mx);                            // (alpha * mx) + mx
+                fp_sub3(&tmp1, (const fp *)&tmp0, (const fp *)&mz);         // (alpha * mx) + mx - mz
+                fp_add2(&tmp0, (const fp *)&mz);                            // (alpha * mx) + mx + mz
+                fp_mul2(&Qbatch[h].x, (const fp *)&tmp0);                   // Qx * ((alpha * mx) + mx + mz)
+                fp_mul2(&Qbatch[h].z, (const fp *)&tmp1);                   // Qz * ((alpha * mx) + mx - mz)
             }
         }
     }
     else
     {
         // no sqrtvelu
-        int64_t ignore = (k + 1) / 2; /* skip i >= ignore */
-
-        assert(Minit[1]);
-        fp_sub3(&tmp4, (const fp *)&M[1].x, (const fp *)&M[1].z);
-        fp_add3(&tmp3, (const fp *)&M[1].x, (const fp *)&M[1].z);
-        fp_copy(Abatch.x, tmp4);
-        fp_copy(Abatch.z, tmp3);
-
-        for (int64_t h = 0; h < Plen; ++h)
+        // Step 1
+        for (int64_t i = 1; i <= bl; ++i)
         {
-            fp_mul3(&tmp1, (const fp *)&tmp4, (const fp *)&Psum[h]);
-            fp_mul3(&tmp0, (const fp *)&tmp3, (const fp *)&Pdif[h]);
-            fp_add3(&Qbatch[h].x, (const fp *)&tmp0, (const fp *)&tmp1);
-            fp_sub3(&Qbatch[h].z, (const fp *)&tmp0, (const fp *)&tmp1);
-        }
-
-        for (int64_t i = 2; i <= (kupper - 1) / 2; ++i)
-        {
-            int64_t want = -((i - ignore) >> 61);
-            // 2 < i < (k-1)/2
             assert(Minit[i]);
             fp_sub3(&tmp4, (const fp *)&M[i].x, (const fp *)&M[i].z);
             fp_add3(&tmp3, (const fp *)&M[i].x, (const fp *)&M[i].z);
-            fp_mul3(&tmp2, (const fp *)&Abatch.x, (const fp *)&tmp4);
-            fp_cmov_ctidh(&Abatch.x, (const fp *)&tmp2, want);
-            fp_mul3(&tmp2, (const fp *)&Abatch.z, (const fp *)&tmp3);
-            fp_cmov_ctidh(&Abatch.z, (const fp *)&tmp2, want);
+            fp_mul2(&Abatch.x, (const fp *)&tmp4);
+            fp_mul2(&Abatch.z, (const fp *)&tmp3);
             for (int64_t h = 0; h < Plen; ++h)
             {
                 // point evaluation
-                fp_mul3(&tmp1, (const fp *)&tmp4, (const fp *)&Psum[h]);
-                fp_mul3(&tmp0, (const fp *)&tmp3, (const fp *)&Pdif[h]);
-                fp_add3(&tmp2, (const fp *)&tmp0, (const fp *)&tmp1);
-                fp_mul2(&tmp2, (const fp *)&Qbatch[h].x);
-                fp_cmov_ctidh(&Qbatch[h].x, (const fp *)&tmp2, want);
-                fp_sub3(&tmp2, (const fp *)&tmp0, (const fp *)&tmp1);
-                fp_mul2(&tmp2, (const fp *)&Qbatch[h].z);
-                fp_cmov_ctidh(&Qbatch[h].z, (const fp *)&tmp2, want);
+                fp_mul3(&tmp1, (const fp *)&tmp4, (const fp *)&Psum[h]); // (X - Z) * (Px + Pz) 
+                fp_mul3(&tmp0, (const fp *)&tmp3, (const fp *)&Pdif[h]); // (X + Z) * (Px - Pz)
+                fp_add3(&tmp2, (const fp *)&tmp0, (const fp *)&tmp1);    // (X + Z) * (Px - Pz) + (X - Z) * (Px + Pz)
+                fp_mul2(&Qbatch[h].x, (const fp *)&tmp2);                // Qx*((X + Z) * (Px - Pz) + (X - Z) * (Px + Pz))
+                fp_sub3(&tmp2, (const fp *)&tmp0, (const fp *)&tmp1);    // (X + Z) * (Px - Pz) - (X - Z) * (Px + Pz)
+                fp_mul2(&Qbatch[h].z, (const fp *)&tmp2);                // Qz*((X + Z) * (Px - Pz) - (X - Z) * (Px + Pz))
             }
         }
+
+        // Step 2
+        for (int64_t i = bl+1; i <= br; ++i)
+        {
+            assert(Minit[i]);
+
+            //todo: whats going on here?
+            // if(fp_iszero(M[i].z)){
+
+            //     printf("zero found @ i: %ld - deg: %ld - (bl: %ld bk: %ld br: %ld t: %ld)\n", i, k, bl, bk, br, t);
+
+            //     // deg: 11 - (bl: 5 bk: 5 br: 8 t: 3)
+                    
+            // }
+
+            int64_t want = -int64mask_negative(bk - i); // i > bk ?
+
+            int64_t alpha = 0;          // in the alg. we use alpha = 1 || -1, but here we switch to 0 || 1 
+                                        // and use it to swap instead to save multiplaction by 1 (resp -1)
+            
+            for(int64_t j = (bl+1 - t); j < i; ++j)
+            {
+               alpha |= proj_equal(&M[i], &M[j]);
+            }
+            assert(alpha == want);
+
+
+            fp mx, mz;
+            fp_copy(mx, M[i].x);                                    // mx = Xi
+            fp_add3(&mz, (const fp *)&M[i].z, (const fp *)&M[i].z); // mz = 2*Zi
+
+            // when we have the alpha = 1 case, the mx part cancels out.
+            // the mz part also cancels out in the projectiv space
+            // (up to the sign, which we fix later)
+
+            fp_copy(tmp0, mx);                                      //  mx = (alpha * mx) for alpha =  1
+            fp_neg2(&tmp1, (const fp *)&mx);                        // -mx = (alpha * mx) for alpha = -1
+            // 1 uses -mx | 0 uses mx
+            fp_cmov_ctidh(&tmp0, (const fp *)&tmp1, alpha);         // (alpha * mx)
+
+
+            fp_add2(&tmp0, (const fp *)&mx);                        // (alpha * mx) + mx
+            fp_sub3(&tmp1, (const fp *)&tmp0, (const fp *)&mz);     // (alpha * mx) + mx - mz
+            fp_add2(&tmp0, (const fp *)&mz);                        // (alpha * mx) + mx + mz
+            fp_mul2(&Abatch.x, (const fp *)&tmp1);                  // Ax * ((alpha * mx) + mx - mz)
+            fp_mul2(&Abatch.z, (const fp *)&tmp0);                  // Az * ((alpha * mx) + mx + mz)
+
+
+
+            fp_add3(&tmp2, (const fp *)&M[i].x, (const fp *)&M[i].z);
+            fp_sub3(&tmp3, (const fp *)&M[i].x, (const fp *)&M[i].z);
+            for (int64_t h = 0; h < Plen; ++h)
+            {
+                // point evaluation
+                fp_mul3(&mx, (const fp *)&tmp2, (const fp *)&Pdif[h]);      // mx = Ax (Px + Pz)
+                fp_mul3(&mz, (const fp *)&tmp3, (const fp *)&Psum[h]);      //      Az (Px - Pz)
+                fp_add2(&mz, (const fp *)&mz);                              // mz = 2 * Az (Px - Pz)
+
+                fp_copy(tmp0, mx);                                          // mx
+                fp_neg2(&tmp1, (const fp *)&mx);                            // -mx
+                // 1 uses -mx | 0 uses mx
+                fp_cmov_ctidh(&tmp0, (const fp *)&tmp1, alpha);             // (alpha * mx)
+
+                fp_add2(&tmp0, (const fp *)&mx);                            // (alpha * mx) + mx
+                fp_sub3(&tmp1, (const fp *)&tmp0, (const fp *)&mz);         // (alpha * mx) + mx - mz
+                fp_add2(&tmp0, (const fp *)&mz);                            // (alpha * mx) + mx + mz
+                fp_mul2(&Qbatch[h].x, (const fp *)&tmp0);                   // Qx * ((alpha * mx) + mx + mz)
+                fp_mul2(&Qbatch[h].z, (const fp *)&tmp1);                   // Qz * ((alpha * mx) + mx - mz)
+            }
+        }
+  
     }
+    
+    // correct the sign in the Z part
+    int64_t correction = -int64mask_nonzero((bk - br) % 2);
+    fp_neg2(&tmp0, (const fp *)&Abatch.z);
+    fp_cmov_ctidh(&Abatch.z, (const fp *)&tmp0, correction);
+
+    for (int64_t h = 0; h < Plen; ++h)
+    {
+        fp_neg2(&tmp0, (const fp *)&Qbatch[h].z);
+        fp_cmov_ctidh(&Qbatch[h].z, (const fp *)&tmp0, correction);
+    }
+    
 
     for (int64_t h = 0; h < Plen; ++h)
     {

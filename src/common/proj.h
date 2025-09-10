@@ -44,6 +44,9 @@ static inline int proj_equal(proj *A, proj *B)
     fp AzBx;
     fp_mul3(&AxBz, (const fp*) &A->x, (const fp*) &B->z);
     fp_mul3(&AzBx, (const fp*) &A->z, (const fp*) &B->x);
+
+    // printf("\t %#018lx == %#018lx", AxBz[0],  AzBx[0]);
+
     return !memcmp(&AxBz, &AzBx, sizeof AzBx);
 }
 
