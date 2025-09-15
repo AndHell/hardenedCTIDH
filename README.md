@@ -1,5 +1,5 @@
 # Hardened CTIDH: Dummy-Free and Deterministic CTIDH
-This repository contains auxiliary material for the paper *Hardened CTIDH: Dummy-Free and Deterministic CTIDH*.
+This repository contains auxiliary material for the paper *[Hardened CTIDH: Dummy-Free and Deterministic CTIDH](https://eprint.iacr.org/2025/1645/)*.
 
 Authors:
 - [Gustavo~Banegas](https://cryptme.in/) `<gustavo@cryptme.in>`
